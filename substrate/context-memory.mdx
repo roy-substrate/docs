@@ -1,0 +1,297 @@
+---
+title: Context Memory
+description: Manage persistent context and memory across API calls
+---
+
+# Context Memory
+
+The Context Memory API enables your application to maintain persistent context and memory across multiple API calls, allowing for stateful conversations and improved user experiences.
+
+## Overview
+
+Context memory allows you to:
+- Store conversation history and context
+- Maintain user preferences and settings
+- Implement stateful interactions
+- Reduce redundant information in subsequent requests
+
+## Basic Usage
+
+```javascript
+import { Substrate } from 'substrate'
+
+const substrate = new Substrate({ apiKey: 'your-api-key' })
+
+// Create a new context session
+const context = await substrate.contextMemory.create({
+  sessionId: 'user-123-session',
+  maxTokens: 4096,
+  retentionDays: 30
+})
+```
+
+## API Reference
+
+### Create Context
+
+Creates a new context memory session.
+
+```javascript
+substrate.contextMemory.create(options)
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|--------------|
+| `sessionId` | string | Yes | Unique identifier for the context session |
+| `maxTokens` | number | No | Maximum tokens to store (default: 2048) |
+| `retentionDays` | number | No | Days to retain context (default: 7) |
+| `metadata` | object | No | Additional metadata to store with context |
+
+#### Response
+
+```javascript
+{
+  sessionId: 'user-123-session',
+  contextId: 'ctx_abc123',
+  createdAt: '2024-01-01T00:00:00Z',
+  expiresAt: '2024-01-08T00:00:00Z'
+}
+```
+
+### Store Context
+
+Stores information in the context memory.
+
+```javascript
+substrate.contextMemory.store(contextId, data)
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|--------------|
+| `contextId` | string | Yes | Context session identifier |
+| `data` | object | Yes | Data to store in context |
+| `data.content` | string | Yes | Content to remember |
+| `data.type` | string | No | Type of content (conversation, preference, etc.) |
+| `data.priority` | number | No | Priority level (1-10, default: 5) |
+
+#### Example
+
+```javascript
+await substrate.contextMemory.store('ctx_abc123', {
+  content: 'User prefers concise responses and technical details',
+  type: 'preference',
+  priority: 8
+})
+```
+
+### Retrieve Context
+
+Retrieves stored context information.
+
+```javascript
+substrate.contextMemory.retrieve(contextId, options)
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|--------------|
+| `contextId` | string | Yes | Context session identifier |
+| `options.limit` | number | No | Maximum items to retrieve (default: 50) |
+| `options.type` | string | No | Filter by content type |
+| `options.minPriority` | number | No | Minimum priority level |
+
+#### Response
+
+```javascript
+{
+  contextId: 'ctx_abc123',
+  items: [
+    {
+      id: 'mem_xyz789',
+      content: 'User prefers concise responses',
+      type: 'preference',
+      priority: 8,
+      timestamp: '2024-01-01T12:00:00Z'
+    }
+  ],
+  totalCount: 1
+}
+```
+
+### Update Context
+
+Updates existing context information.
+
+```javascript
+substrate.contextMemory.update(contextId, memoryId, updates)
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|--------------|
+| `contextId` | string | Yes | Context session identifier |
+| `memoryId` | string | Yes | Memory item identifier |
+| `updates` | object | Yes | Updates to apply |
+
+### Delete Context
+
+Deletes a context session and all associated memory.
+
+```javascript
+substrate.contextMemory.delete(contextId)
+```
+
+## Advanced Features
+
+### Context Compression
+
+When context approaches token limits, older or lower-priority items are automatically compressed or removed.
+
+```javascript
+const context = await substrate.contextMemory.create({
+  sessionId: 'user-session',
+  maxTokens: 4096,
+  compressionStrategy: 'priority', // 'priority', 'temporal', 'semantic'
+  compressionThreshold: 0.8 // Compress when 80% full
+})
+```
+
+### Semantic Search
+
+Search context using semantic similarity.
+
+```javascript
+const results = await substrate.contextMemory.search(contextId, {
+  query: 'user preferences about response style',
+  limit: 5,
+  threshold: 0.7
+})
+```
+
+### Context Templates
+
+Use predefined templates for common context patterns.
+
+```javascript
+const context = await substrate.contextMemory.createFromTemplate({
+  template: 'customer-support',
+  sessionId: 'support-user-123',
+  variables: {
+    customerTier: 'premium',
+    supportLanguage: 'en'
+  }
+})
+```
+
+## Best Practices
+
+### Memory Management
+
+- Set appropriate retention periods based on use case
+- Use priority levels to maintain important information longer
+- Regularly clean up expired or unused contexts
+
+### Performance Optimization
+
+- Batch context operations when possible
+- Use semantic search for large context stores
+- Implement client-side caching for frequently accessed context
+
+### Security Considerations
+
+- Never store sensitive information like passwords or API keys
+- Implement proper access controls for context sessions
+- Use encryption for sensitive context data
+
+## Error Handling
+
+The Context Memory API returns standard HTTP status codes and error messages.
+
+### Common Errors
+
+| Status Code | Error | Description |
+|-------------|--------|-------------|
+| 400 | `INVALID_SESSION_ID` | Session ID format is invalid |
+| 404 | `CONTEXT_NOT_FOUND` | Context session doesn't exist |
+| 413 | `CONTEXT_TOO_LARGE` | Context exceeds maximum size limit |
+| 429 | `RATE_LIMITED` | Too many context operations |
+
+### Error Handling Example
+
+```javascript
+try {
+  const context = await substrate.contextMemory.retrieve('ctx_invalid')
+} catch (error) {
+  if (error.code === 'CONTEXT_NOT_FOUND') {
+    // Handle missing context
+    console.log('Context not found, creating new session')
+    const newContext = await substrate.contextMemory.create({
+      sessionId: 'new-session'
+    })
+  }
+}
+```
+
+## Limits and Quotas
+
+| Limit | Value |
+|-------|-------|
+| Maximum contexts per account | 10,000 |
+| Maximum memory items per context | 1,000 |
+| Maximum context size | 1MB |
+| Maximum retention period | 365 days |
+| API calls per minute | 1,000 |
+
+## SDK Examples
+
+### Node.js
+
+```javascript
+const { Substrate } = require('substrate')
+
+const substrate = new Substrate({ apiKey: process.env.SUBSTRATE_API_KEY })
+
+async function maintainConversationContext(userId, message) {
+  const contextId = `conversation-${userId}`
+  
+  // Store the new message
+  await substrate.contextMemory.store(contextId, {
+    content: `User: ${message}`,
+    type: 'conversation',
+    priority: 7
+  })
+  
+  // Retrieve recent conversation history
+  const context = await substrate.contextMemory.retrieve(contextId, {
+    limit: 10,
+    type: 'conversation'
+  })
+  
+  return context.items.map(item => item.content).join('\n')
+}
+```
+
+### Python
+
+```python
+from substrate import Substrate
+
+substrate = Substrate(api_key=os.environ['SUBSTRATE_API_KEY'])
+
+def store_user_preferences(user_id, preferences):
+    context_id = f"preferences-{user_id}"
+    
+    substrate.context_memory.store(context_id, {
+        'content': json.dumps(preferences),
+        'type': 'preferences',
+        'priority': 9
+    })
+    
+    return context_id
+`
