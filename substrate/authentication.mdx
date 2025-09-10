@@ -9,7 +9,7 @@ The Substrate API uses API keys for authentication. All API requests must includ
 
 ## Getting Your API Key
 
-1. Sign up for a Substrate account at [https://dashboard.substrate.ai](https://dashboard.substrate.ai)
+1. Sign up for a Substrate account at [https://app.getsubstrate.co](https://app.getsubstrate.co)
 2. Navigate to the API Keys section in your dashboard
 3. Generate a new API key for your application
 4. Store your API key securely
@@ -61,6 +61,7 @@ curl -X POST https://api.substrate.ai/v1/chat/completions \
 ## Code Examples
 
 <CodeGroup>
+
 ```python Python
 import requests
 
@@ -86,94 +87,91 @@ response = requests.post(
 print(response.json())
 ```
 
-```javascript JavaScript
+```javascript Node.js
+const axios = require('axios');
+
 const apiKey = 'your-api-key-here';
 const baseURL = 'https://api.substrate.ai/v1';
 
-const response = await fetch(`${baseURL}/chat/completions`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${apiKey}`
-  },
-  body: JSON.stringify({
+const headers = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${apiKey}`
+};
+
+const response = await axios.post(
+  `${baseURL}/chat/completions`,
+  {
     model: 'gpt-4',
     messages: [
       { role: 'user', content: 'Hello, world!' }
     ]
-  })
-});
+  },
+  { headers }
+);
 
-const data = await response.json();
-console.log(data);
+console.log(response.data);
 ```
 
-```bash cURL
-curl -X POST https://api.substrate.ai/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_API_KEY" \
-  -d '{
-    "model": "gpt-4",
-    "messages": [
-      {
-        "role": "user",
-        "content": "Hello, world!"
-      }
-    ]
-  }'
+```go Go
+package main
+
+import (
+    "bytes"
+    "encoding/json"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    apiKey := "your-api-key-here"
+    baseURL := "https://api.substrate.ai/v1"
+    
+    payload := map[string]interface{}{
+        "model": "gpt-4",
+        "messages": []map[string]string{
+            {"role": "user", "content": "Hello, world!"},
+        },
+    }
+    
+    jsonPayload, _ := json.Marshal(payload)
+    req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(jsonPayload))
+    
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("Authorization", "Bearer "+apiKey)
+    
+    client := &http.Client{}
+    resp, err := client.Do(req)
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    defer resp.Body.Close()
+    
+    // Handle response
+}
 ```
+
 </CodeGroup>
 
-## Error Handling
+## Error Responses
 
-If authentication fails, the API will return a `401 Unauthorized` status code:
+If authentication fails, you'll receive a `401 Unauthorized` response:
 
 ```json
 {
   "error": {
-    "type": "authentication_error",
     "message": "Invalid API key provided",
+    "type": "authentication_error",
     "code": "invalid_api_key"
   }
 }
 ```
 
-## Rate Limits
+## Need Help?
 
-API keys are subject to rate limits based on your subscription tier:
+If you're having trouble with authentication:
 
-- **Free Tier**: 1,000 requests per day, 10 requests per minute
-- **Pro Tier**: 100,000 requests per day, 500 requests per minute
-- **Enterprise**: Custom limits available
-
-Rate limit headers are included in all API responses:
-
-```
-X-RateLimit-Limit: 500
-X-RateLimit-Remaining: 499
-X-RateLimit-Reset: 1640995200
-```
-
-## Best Practices
-
-<AccordionGroup>
-  <Accordion title="Secure Storage">
-    - Store API keys in environment variables
-    - Use a secure secret management system in production
-    - Never commit API keys to version control
-    - Rotate API keys regularly
-  </Accordion>
-
-  <Accordion title="Error Handling">
-    - Always check for authentication errors
-    - Implement proper retry logic with exponential backoff
-    - Log authentication errors for monitoring
-  </Accordion>
-
-  <Accordion title="Rate Limiting">
-    - Monitor your rate limit usage
-    - Implement client-side rate limiting
-    - Cache responses when appropriate
-    - Use batch requests when available
-  </Accordion>
-</AccordionGroup>
+- Check that your API key is correct and hasn't expired
+- Ensure you're using the correct authentication method
+- Contact support at roy@getsubstrate.co
+- Join our Discord community at [https://discord.gg/fjDjUqZ9](https://discord.gg/fjDjUqZ9)
