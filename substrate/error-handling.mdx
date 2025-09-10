@@ -1,0 +1,221 @@
+# Error Handling
+
+Substrate's API uses conventional HTTP response codes to indicate the success or failure of an API request. In general: Codes in the `2xx` range indicate success. Codes in the `4xx` range indicate an error that failed given the information provided (e.g., a required parameter was omitted, invalid authentication, etc.). Codes in the `5xx` range indicate an error with our servers.
+
+## Error Response Format
+
+All errors return a JSON object with the following structure:
+
+```json
+{
+  "error": {
+    "type": "invalid_request_error",
+    "code": "missing_parameter",
+    "message": "Missing required parameter: 'model'",
+    "param": "model"
+  }
+}
+```
+
+### Error Object Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `type` | string | The type of error that occurred |
+| `code` | string | A specific error code identifying the exact error |
+| `message` | string | A human-readable description of the error |
+| `param` | string | _(optional)_ The parameter that caused the error |
+
+## HTTP Status Codes
+
+| Status Code | Description |
+|-------------|-------------|
+| `200` | OK - Everything worked as expected |
+| `400` | Bad Request - The request was unacceptable, often due to missing a required parameter |
+| `401` | Unauthorized - No valid API key provided |
+| `403` | Forbidden - The API key doesn't have permissions to perform the request |
+| `404` | Not Found - The requested resource doesn't exist |
+| `422` | Unprocessable Entity - The request was well-formed but contains semantic errors |
+| `429` | Too Many Requests - Too many requests hit the API too quickly |
+| `500` | Internal Server Error - Something went wrong on Substrate's end |
+| `502` | Bad Gateway - Invalid response from an upstream server |
+| `503` | Service Unavailable - The server is temporarily overloaded or down |
+| `504` | Gateway Timeout - The request timed out |
+
+## Error Types
+
+### `authentication_error`
+Failure to properly authenticate yourself in the request.
+
+### `invalid_request_error`
+The request was malformed or missing required parameters.
+
+### `permission_error`
+The provided credentials don't have permission to perform the request.
+
+### `rate_limit_error`
+You've exceeded the rate limit for your account.
+
+### `resource_not_found_error`
+The requested resource could not be found.
+
+### `server_error`
+An internal error occurred on Substrate's servers.
+
+### `service_unavailable_error`
+The service is temporarily unavailable.
+
+## Common Error Codes
+
+| Error Code | Description | Typical HTTP Status |
+|------------|-------------|--------------------|
+| `api_key_invalid` | The provided API key is invalid | 401 |
+| `api_key_missing` | No API key was provided | 401 |
+| `insufficient_quota` | You've exceeded your usage quota | 403 |
+| `invalid_content_type` | The Content-Type header is invalid | 400 |
+| `invalid_json` | The request body contains invalid JSON | 400 |
+| `missing_parameter` | A required parameter is missing | 400 |
+| `invalid_parameter` | A parameter has an invalid value | 400 |
+| `rate_limit_exceeded` | Too many requests in a short period | 429 |
+| `model_not_found` | The specified model doesn't exist | 404 |
+| `conversation_not_found` | The specified conversation doesn't exist | 404 |
+| `context_limit_exceeded` | The request exceeds the model's context limit | 422 |
+| `content_filtered` | The request was blocked by content filters | 422 |
+| `server_overloaded` | The server is temporarily overloaded | 503 |
+| `timeout` | The request timed out | 504 |
+
+## Error Handling Best Practices
+
+### Retry Logic
+Implement exponential backoff for retryable errors (5xx status codes and 429):
+
+```python
+import time
+import random
+
+def retry_with_exponential_backoff(
+    func,
+    initial_delay: float = 1,
+    exponential_base: float = 2,
+    jitter: bool = True,
+    max_retries: int = 3
+):
+    """Retry a function with exponential backoff."""
+    
+    num_retries = 0
+    delay = initial_delay
+    
+    while True:
+        try:
+            return func()
+        
+        except Exception as e:
+            # Check if error is retryable
+            if hasattr(e, 'status_code'):
+                if e.status_code < 500 and e.status_code != 429:
+                    raise  # Don't retry client errors
+            
+            num_retries += 1
+            
+            if num_retries > max_retries:
+                raise e
+            
+            delay *= exponential_base * (1 + jitter * random.random())
+            time.sleep(delay)
+```
+
+### Error Logging
+Log errors with sufficient context for debugging:
+
+```python
+import logging
+
+logger = logging.getLogger(__name__)
+
+try:
+    response = substrate.chat.completions.create(
+        model="gpt-4",
+        messages=[{"role": "user", "content": "Hello!"}]
+    )
+except SubstrateError as e:
+    logger.error(
+        "Substrate API error",
+        extra={
+            "error_type": e.error.type,
+            "error_code": e.error.code,
+            "error_message": e.error.message,
+            "status_code": e.status_code,
+            "request_id": getattr(e, 'request_id', None)
+        }
+    )
+    raise
+```
+
+### Graceful Degradation
+Handle errors gracefully in user-facing applications:
+
+```python
+def get_chat_completion(messages, model="gpt-4"):
+    try:
+        response = substrate.chat.completions.create(
+            model=model,
+            messages=messages
+        )
+        return response.choices[0].message.content
+    
+    except SubstrateError as e:
+        if e.error.code == "model_not_found":
+            # Fallback to a default model
+            return get_chat_completion(messages, model="gpt-3.5-turbo")
+        elif e.error.code == "rate_limit_exceeded":
+            return "Sorry, I'm experiencing high demand. Please try again in a moment."
+        elif e.error.code == "content_filtered":
+            return "I can't provide a response to that request."
+        else:
+            return "I'm having trouble processing your request right now."
+```
+
+## Debugging Tips
+
+### Request IDs
+Every API response includes a unique `request_id` in the headers. Include this when contacting support:
+
+```python
+try:
+    response = substrate.chat.completions.create(...)
+except SubstrateError as e:
+    print(f"Request ID: {e.request_id}")
+    print(f"Error: {e.error.message}")
+```
+
+### Validate Parameters
+Validate your parameters before sending requests:
+
+```python
+def validate_chat_request(messages, model=None):
+    if not messages:
+        raise ValueError("Messages cannot be empty")
+    
+    for message in messages:
+        if "role" not in message or "content" not in message:
+            raise ValueError("Each message must have 'role' and 'content'")
+        
+        if message["role"] not in ["system", "user", "assistant"]:
+            raise ValueError(f"Invalid role: {message['role']}")
+    
+    if model and not isinstance(model, str):
+        raise ValueError("Model must be a string")
+```
+
+### Monitor Usage
+Regularly monitor your API usage to avoid unexpected quota limits:
+
+```python
+response = substrate.usage.analytics.get(
+    start_date="2024-01-01",
+    end_date="2024-01-31"
+)
+
+print(f"Tokens used: {response.total_tokens}")
+print(f"Requests made: {response.total_requests}")
+```
