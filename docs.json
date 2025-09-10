@@ -1,42 +1,35 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Substrate API Documentation",
-  "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
-  },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Substrate API",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "substrate/overview",
-              "substrate/authentication"
-            ]
-          },
-          {
-            "group": "Core Features",
-            "pages": [
-              "substrate/chat-completions",
-              "substrate/conversations",
-              "substrate/context-memory"
-            ]
-          },
-          {
-            "group": "Management",
-            "pages": [
-              "substrate/usage-analytics",
-              "substrate/error-handling"
-            ]
-          }
-        ]
-      }
-    ]
-  }
+ "$schema": "https://mintlify.com/docs.json",
+ "theme": "mint",
+ "name": "Substrate API Documentation",
+ "colors": {
+ "primary": "#16A34A",
+ "light": "#07C983",
+ "dark": "#15803D"
+ },
+ "favicon": "/favicon.svg",
+ "navigation": {
+ "tabs": [
+ {
+ "tab": "Substrate API",
+ "groups": [
+ {
+ "group": "Core Features",
+ "pages": [
+ "substrate/chat-completions",
+ "substrate/conversations",
+ "substrate/context-memory"
+ ]
+ },
+ {
+ "group": "Management",
+ "pages": [
+ "substrate/usage-analytics",
+ "substrate/error-handling"
+ ]
+ }
+ ]
+ }
+ ]
+ }
 }
