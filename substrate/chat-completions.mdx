@@ -1,0 +1,368 @@
+---
+title: "Chat Completions"
+description: "Generate intelligent responses using the Substrate Chat Completions API"
+---
+
+# Chat Completions
+
+The Chat Completions API is the core endpoint for generating intelligent responses using large language models. It processes conversational input and returns contextually appropriate completions.
+
+## Endpoint
+
+```
+POST https://api.substrate.ai/v1/chat/completions
+```
+
+## Authentication
+
+All requests must include authentication. See the [Authentication](/substrate/authentication) section for details.
+
+## Request Format
+
+### Basic Request
+
+```json
+{
+  "model": "gpt-4",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, how are you?"
+    }
+  ]
+}
+```
+
+### Request Parameters
+
+<ParamField path="model" type="string" required>
+  The model to use for completion. Available models: `gpt-4`, `gpt-4-turbo`, `gpt-3.5-turbo`, `claude-3-sonnet`, `claude-3-haiku`
+</ParamField>
+
+<ParamField path="messages" type="array" required>
+  Array of message objects representing the conversation
+</ParamField>
+
+<ParamField path="messages[].role" type="string" required>
+  The role of the message author. Can be `system`, `user`, or `assistant`
+</ParamField>
+
+<ParamField path="messages[].content" type="string" required>
+  The content of the message
+</ParamField>
+
+<ParamField path="temperature" type="number" default="1">
+  Controls randomness in the output. Range: 0-2. Lower values = more focused, higher values = more creative
+</ParamField>
+
+<ParamField path="max_tokens" type="integer">
+  Maximum number of tokens to generate in the completion
+</ParamField>
+
+<ParamField path="stream" type="boolean" default="false">
+  Whether to stream the response as it's generated
+</ParamField>
+
+<ParamField path="stop" type="string | array">
+  Up to 4 sequences where the API will stop generating further tokens
+</ParamField>
+
+## Response Format
+
+### Standard Response
+
+```json
+{
+  "id": "chatcmpl-8kJn6KzJvE2OKxYNLqJ8mQ7NX8pBz",
+  "object": "chat.completion",
+  "created": 1699883766,
+  "model": "gpt-4",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": "Hello! I'm doing well, thank you for asking. How can I help you today?"
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 12,
+    "completion_tokens": 17,
+    "total_tokens": 29
+  }
+}
+```
+
+### Response Fields
+
+<ResponseField name="id" type="string">
+  Unique identifier for the completion
+</ResponseField>
+
+<ResponseField name="object" type="string">
+  The object type, always `chat.completion`
+</ResponseField>
+
+<ResponseField name="created" type="integer">
+  Unix timestamp of when the completion was created
+</ResponseField>
+
+<ResponseField name="model" type="string">
+  The model used for the completion
+</ResponseField>
+
+<ResponseField name="choices" type="array">
+  Array of completion choices
+</ResponseField>
+
+<ResponseField name="usage" type="object">
+  Token usage statistics for the request
+</ResponseField>
+
+## Code Examples
+
+<CodeGroup>
+```python Python
+import requests
+
+api_key = "your-api-key-here"
+base_url = "https://api.substrate.ai/v1"
+
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {api_key}"
+}
+
+payload = {
+    "model": "gpt-4",
+    "messages": [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant."
+        },
+        {
+            "role": "user",
+            "content": "Explain quantum computing in simple terms."
+        }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 150
+}
+
+response = requests.post(
+    f"{base_url}/chat/completions",
+    headers=headers,
+    json=payload
+)
+
+result = response.json()
+print(result['choices'][0]['message']['content'])
+```
+
+```javascript JavaScript
+const apiKey = 'your-api-key-here';
+const baseURL = 'https://api.substrate.ai/v1';
+
+const payload = {
+  model: 'gpt-4',
+  messages: [
+    {
+      role: 'system',
+      content: 'You are a helpful assistant.'
+    },
+    {
+      role: 'user',
+      content: 'Explain quantum computing in simple terms.'
+    }
+  ],
+  temperature: 0.7,
+  max_tokens: 150
+};
+
+const response = await fetch(`${baseURL}/chat/completions`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`
+  },
+  body: JSON.stringify(payload)
+});
+
+const result = await response.json();
+console.log(result.choices[0].message.content);
+```
+
+```bash cURL
+curl -X POST https://api.substrate.ai/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are a helpful assistant."
+      },
+      {
+        "role": "user",
+        "content": "Explain quantum computing in simple terms."
+      }
+    ],
+    "temperature": 0.7,
+    "max_tokens": 150
+  }'
+```
+</CodeGroup>
+
+## Streaming Responses
+
+For real-time applications, you can stream responses as they're generated:
+
+<CodeGroup>
+```python Python
+import requests
+
+def stream_completion():
+    payload = {
+        "model": "gpt-4",
+        "messages": [{"role": "user", "content": "Tell me a story"}],
+        "stream": True
+    }
+    
+    response = requests.post(
+        f"{base_url}/chat/completions",
+        headers=headers,
+        json=payload,
+        stream=True
+    )
+    
+    for line in response.iter_lines():
+        if line:
+            decoded_line = line.decode('utf-8')
+            if decoded_line.startswith('data: '):
+                chunk = decoded_line[6:]  # Remove 'data: ' prefix
+                if chunk != '[DONE]':
+                    import json
+                    data = json.loads(chunk)
+                    if data['choices'][0]['delta'].get('content'):
+                        print(data['choices'][0]['delta']['content'], end='')
+```
+
+```javascript JavaScript
+const response = await fetch(`${baseURL}/chat/completions`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${apiKey}`
+  },
+  body: JSON.stringify({
+    model: 'gpt-4',
+    messages: [{role: 'user', content: 'Tell me a story'}],
+    stream: true
+  })
+});
+
+const reader = response.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+  
+  const chunk = decoder.decode(value);
+  const lines = chunk.split('\n');
+  
+  for (const line of lines) {
+    if (line.startsWith('data: ')) {
+      const data = line.slice(6);
+      if (data !== '[DONE]') {
+        const parsed = JSON.parse(data);
+        if (parsed.choices[0].delta.content) {
+          process.stdout.write(parsed.choices[0].delta.content);
+        }
+      }
+    }
+  }
+}
+```
+</CodeGroup>
+
+## Error Handling
+
+<AccordionGroup>
+  <Accordion title="400 - Bad Request">
+    Invalid request format or parameters
+    
+    ```json
+    {
+      "error": {
+        "type": "invalid_request_error",
+        "message": "Invalid value for 'model': must be one of gpt-4, gpt-3.5-turbo, etc.",
+        "code": "invalid_model"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="401 - Unauthorized">
+    Missing or invalid API key
+    
+    ```json
+    {
+      "error": {
+        "type": "authentication_error",
+        "message": "Invalid API key provided",
+        "code": "invalid_api_key"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="429 - Rate Limited">
+    Too many requests
+    
+    ```json
+    {
+      "error": {
+        "type": "rate_limit_exceeded",
+        "message": "Rate limit exceeded. Please try again later.",
+        "code": "rate_limit_exceeded"
+      }
+    }
+    ```
+  </Accordion>
+
+  <Accordion title="500 - Server Error">
+    Internal server error
+    
+    ```json
+    {
+      "error": {
+        "type": "api_error",
+        "message": "The server had an error processing your request",
+        "code": "api_error"
+      }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<Tip>
+  **Optimize Your Prompts**: Well-crafted system messages can significantly improve response quality and consistency.
+</Tip>
+
+<Tip>
+  **Use Temperature Wisely**: Lower values (0.1-0.3) for factual tasks, higher values (0.7-1.0) for creative tasks.
+</Tip>
+
+<Tip>
+  **Implement Error Handling**: Always handle rate limits and API errors gracefully with retry logic.
+</Tip>
+
+<Tip>
+  **Monitor Token Usage**: Track your token consumption to optimize costs and performance.
+</Tip>
