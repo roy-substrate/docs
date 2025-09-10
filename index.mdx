@@ -1,0 +1,120 @@
+---
+title: "Substrate Documentation"
+description: "Welcome to Substrate"
+---
+
+# Welcome to Substrate
+
+Substrate is a powerful platform for building and deploying AI applications.
+
+## Getting Started
+
+Get started with our quickstart guide.
+
+## Supported Models by Platform
+
+Here are the models currently supported by different platforms.
+
+### 🌎 Supported Platforms, Models, and Usage
+
+Substrate lets you route each API call to your choice of model **and** AI backend.
+Specify both the `platform` and `model` fields for every request.
+
+#### Platform & Model Table
+
+| Platform Name         | `platform` value | Example Models                                                                   | Use-case/Notes                           |
+|-----------------------|------------------|----------------------------------------------------------------------------------|------------------------------------------|
+| **OpenAI**            | `openai`         | `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `gpt-3.5-turbo`                          | Mainstream, general & advanced LLM tasks  |
+| **Anthropic (Claude)**| `anthropic`      | `claude-3-5-sonnet-20241022`, `claude-3-5-haiku-20241022`, `claude-3-opus-20240229` | Reasoning, safety, long inputs            |
+| **Perplexity**        | `perplexity`     | `sonar-pro`, `sonar-reasoning-pro`, `llama-3.1-sonar-large-128k-online`          | Factual, retrieval/search-augmented answers|
+| **Google Gemini**     | `google`         | `gemini-2.0-flash`, `gemini-1.5-pro`, `gemini-1.5-flash`                         | Multi-modal, streaming, fast tasks        |
+| **DeepSeek**          | `deepseek`       | `deepseek-coder`, `deepseek-llm`                                                 | R&D, code generation, open models         |
+| **V0 / Community**    | `v0`             | `phi-3`, `mixtral`, `mistral-7b`, `mistral-8x22b` *(expand as available)*        | Open-source, experimental LLMs            |
+
+---
+
+#### How to Use
+
+- You **must specify both** `platform` and `model` in every request.
+- If the model is not available for a specified platform, you'll get an `INVALID_MODEL` error.
+- Live model/platform additions are updated in the Substrate dashboard, not always in static docs.
+
+---
+
+#### Example API Calls
+
+**OpenAI:**
+```json
+{
+  "messages": [{ "role": "user", "content": "Summarize this text" }],
+  "platform": "openai",
+  "model": "gpt-4o"
+}
+```
+
+**Anthropic:**
+```json
+{
+  "messages": [{ "role": "user", "content": "Generate an outline for a research paper" }],
+  "platform": "anthropic",
+  "model": "claude-3-5-sonnet-20241022"
+}
+```
+
+**Perplexity:**
+```json
+{
+  "messages": [{ "role": "user", "content": "What's trending on X right now?" }],
+  "platform": "perplexity",
+  "model": "sonar-pro"
+}
+```
+
+**Google Gemini:**
+```json
+{
+  "messages": [{ "role": "user", "content": "Generate image captions" }],
+  "platform": "google",
+  "model": "gemini-2.0-flash"
+}
+```
+
+**DeepSeek:**
+```json
+{
+  "messages": [{ "role": "user", "content": "Write TypeScript code for a todo list" }],
+  "platform": "deepseek",
+  "model": "deepseek-coder"
+}
+```
+
+**V0/Open:**
+```json
+{
+  "messages": [{ "role": "user", "content": "Summarize this PDF" }],
+  "platform": "v0",
+  "model": "phi-3"
+}
+```
+
+---
+
+#### Discovering New Models & Platforms
+
+- **Best practice:** Always check your [Substrate dashboard](https://app.getsubstrate.co) for the newest models and supported platforms.
+- **Programmatic access:** If available, query `/models` or similar endpoint for current options.
+
+---
+
+#### Troubleshooting
+
+- **`INVALID_MODEL` error:** Usually means the model string is misspelled, not active for that platform, or out of date.
+- **Action:** Double-check your spelling, permitted models, and that you're pairing platform/model correctly as above.
+
+---
+
+Add this whole block to your docs for immediate clarity—no more developer confusion or model/platform pairing mistakes. Let me know if you want even more detail (e.g., version tags, pricing, context length per model, etc.)!
+
+## API Reference
+
+Check out our comprehensive API reference for detailed information about all endpoints.
