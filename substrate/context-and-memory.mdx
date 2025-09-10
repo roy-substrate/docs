@@ -1,0 +1,308 @@
+# Context & Memory
+
+The Context & Memory API provides persistent storage capabilities for maintaining conversation state, user preferences, and application data across sessions. This powerful feature enables your applications to build meaningful, contextual interactions by remembering past conversations and user-specific information.
+
+## Overview
+
+Context & Memory allows you to:
+- Store and retrieve conversation history
+- Maintain user preferences and settings
+- Create personalized experiences
+- Build stateful applications that remember previous interactions
+- Share context between different parts of your application
+
+## API Reference
+
+### Store Context
+
+Stores data in the context memory with a specified key.
+
+```typescript
+import { substrate } from 'substrate'
+
+const response = await substrate.storeContext({
+  key: 'user_preferences',
+  value: {
+    theme: 'dark',
+    language: 'en',
+    notifications: true
+  },
+  ttl: 3600 // Optional: Time to live in seconds
+})
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `key` | `string` | Yes | Unique identifier for the stored data |
+| `value` | `any` | Yes | Data to store (will be JSON serialized) |
+| `ttl` | `number` | No | Time to live in seconds (default: no expiration) |
+| `namespace` | `string` | No | Optional namespace for organizing data |
+
+#### Response
+
+```typescript
+{
+  success: boolean
+  key: string
+  timestamp: string
+}
+```
+
+### Retrieve Context
+
+Retrieves previously stored data from context memory.
+
+```typescript
+const response = await substrate.getContext({
+  key: 'user_preferences'
+})
+
+if (response.found) {
+  const preferences = response.value
+  console.log(preferences.theme) // 'dark'
+}
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `key` | `string` | Yes | Key of the data to retrieve |
+| `namespace` | `string` | No | Namespace to search within |
+
+#### Response
+
+```typescript
+{
+  found: boolean
+  value?: any
+  key: string
+  timestamp?: string
+  ttl?: number
+}
+```
+
+### List Context Keys
+
+Retrieves all available keys in the context memory.
+
+```typescript
+const response = await substrate.listContextKeys({
+  namespace: 'user_data', // Optional
+  prefix: 'pref_' // Optional: filter by key prefix
+})
+
+console.log(response.keys) // ['user_preferences', 'conversation_history']
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `namespace` | `string` | No | Namespace to list keys from |
+| `prefix` | `string` | No | Filter keys by prefix |
+| `limit` | `number` | No | Maximum number of keys to return |
+
+#### Response
+
+```typescript
+{
+  keys: string[]
+  total: number
+  namespace?: string
+}
+```
+
+### Delete Context
+
+Removes data from context memory.
+
+```typescript
+const response = await substrate.deleteContext({
+  key: 'user_preferences'
+})
+```
+
+#### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `key` | `string` | Yes | Key of the data to delete |
+| `namespace` | `string` | No | Namespace containing the key |
+
+#### Response
+
+```typescript
+{
+  success: boolean
+  key: string
+  found: boolean
+}
+```
+
+## Usage Examples
+
+### Conversation History
+
+```typescript
+// Store conversation turn
+await substrate.storeContext({
+  key: 'conversation_history',
+  value: {
+    messages: [
+      { role: 'user', content: 'Hello, how are you?' },
+      { role: 'assistant', content: 'I\'m doing well, thank you!' }
+    ],
+    timestamp: new Date().toISOString()
+  }
+})
+
+// Retrieve and continue conversation
+const history = await substrate.getContext({
+  key: 'conversation_history'
+})
+
+if (history.found) {
+  const messages = history.value.messages
+  // Use previous messages for context
+}
+```
+
+### User Session Management
+
+```typescript
+// Store user session data
+await substrate.storeContext({
+  key: `session_${userId}`,
+  value: {
+    lastActive: Date.now(),
+    preferences: userPrefs,
+    workflowState: currentState
+  },
+  ttl: 86400 // 24 hours
+})
+
+// Check for existing session
+const session = await substrate.getContext({
+  key: `session_${userId}`
+})
+
+if (session.found && session.value.lastActive > Date.now() - 3600000) {
+  // Session is active, restore state
+  const workflowState = session.value.workflowState
+}
+```
+
+### Namespaced Data Organization
+
+```typescript
+// Store data in different namespaces
+await substrate.storeContext({
+  key: 'config',
+  value: { apiEndpoint: 'https://api.example.com' },
+  namespace: 'app_settings'
+})
+
+await substrate.storeContext({
+  key: 'profile',
+  value: { name: 'John Doe', email: 'john@example.com' },
+  namespace: 'user_data'
+})
+
+// List keys in specific namespace
+const appKeys = await substrate.listContextKeys({
+  namespace: 'app_settings'
+})
+```
+
+## Best Practices
+
+### Key Naming Conventions
+
+- Use descriptive, hierarchical keys: `user_${userId}_preferences`
+- Include version numbers for evolving schemas: `conversation_v2_${sessionId}`
+- Use consistent prefixes for related data: `cache_`, `session_`, `config_`
+
+### Data Structure
+
+```typescript
+// Good: Structured data with metadata
+await substrate.storeContext({
+  key: 'user_workspace',
+  value: {
+    version: '1.0',
+    data: {
+      openFiles: ['file1.js', 'file2.ts'],
+      currentProject: 'my-app'
+    },
+    metadata: {
+      lastModified: Date.now(),
+      source: 'editor'
+    }
+  }
+})
+```
+
+### TTL Management
+
+- Use TTL for temporary data like sessions, caches
+- Set appropriate expiration times based on data sensitivity
+- Consider user privacy when setting retention periods
+
+```typescript
+// Different TTL strategies
+await substrate.storeContext({
+  key: 'temp_calculation',
+  value: result,
+  ttl: 300 // 5 minutes for temporary results
+})
+
+await substrate.storeContext({
+  key: 'user_session',
+  value: sessionData,
+  ttl: 86400 // 24 hours for sessions
+})
+
+// Permanent storage (no TTL)
+await substrate.storeContext({
+  key: 'user_preferences',
+  value: preferences
+  // No TTL - data persists until explicitly deleted
+})
+```
+
+## Error Handling
+
+```typescript
+try {
+  const response = await substrate.storeContext({
+    key: 'important_data',
+    value: complexObject
+  })
+  
+  if (!response.success) {
+    console.error('Failed to store context:', response)
+  }
+} catch (error) {
+  console.error('Context storage error:', error)
+  // Handle storage failures gracefully
+}
+```
+
+## Limitations
+
+- Maximum value size: 1MB per key
+- Maximum keys per namespace: 10,000
+- Key names must be valid UTF-8 strings
+- TTL precision is limited to seconds
+- Nested objects are JSON serialized (functions and undefined values are lost)
+
+## Security Considerations
+
+- Context data is encrypted at rest
+- Access is scoped to your application/user context
+- Avoid storing sensitive credentials or personal data without proper consideration
+- Use appropriate TTL values to limit data retention
+- Consider implementing client-side encryption for highly sensitive data
