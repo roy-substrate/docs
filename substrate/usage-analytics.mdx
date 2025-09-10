@@ -1,0 +1,73 @@
+# Usage & Analytics API
+
+The Usage & Analytics API provides insights into your application's usage patterns and performance metrics.
+
+## Query Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `start_date` | string | Yes | Start date for analytics data (ISO 8601 format) |
+| `end_date` | string | Yes | End date for analytics data (ISO 8601 format) |
+| `metric` | string | No | Specific metric to retrieve (defaults to all metrics) |
+| `granularity` | string | No | Data granularity: `hour`, `day`, `week`, `month` (default: `day`) |
+| `filter` | string | No | Filter criteria for the data |
+| `limit` | integer | No | Maximum number of records to return (default: 100, max: 1000) |
+
+## Example Request
+
+```http
+GET /api/v1/usage-analytics?start_date=2023-01-01&end_date=2023-01-31&granularity=day&limit=100
+Authorization: Bearer your-api-token
+Content-Type: application/json
+```
+
+## Example Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "period": {
+      "start_date": "2023-01-01T00:00:00Z",
+      "end_date": "2023-01-31T23:59:59Z"
+    },
+    "granularity": "day",
+    "metrics": [
+      {
+        "date": "2023-01-01",
+        "total_requests": 1250,
+        "unique_users": 89,
+        "api_calls": {
+          "successful": 1180,
+          "failed": 70
+        },
+        "response_time_avg": 145.6,
+        "bandwidth_usage": 52428800
+      },
+      {
+        "date": "2023-01-02",
+        "total_requests": 1456,
+        "unique_users": 102,
+        "api_calls": {
+          "successful": 1389,
+          "failed": 67
+        },
+        "response_time_avg": 132.4,
+        "bandwidth_usage": 61440000
+      }
+    ],
+    "summary": {
+      "total_requests": 45678,
+      "avg_daily_users": 95.3,
+      "success_rate": 94.2,
+      "avg_response_time": 138.9
+    }
+  },
+  "pagination": {
+    "page": 1,
+    "per_page": 100,
+    "total_pages": 1,
+    "total_count": 31
+  }
+}
+```
