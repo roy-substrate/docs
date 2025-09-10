@@ -1,0 +1,190 @@
+---
+title: "Conversations"
+description: "Manage multi-turn conversations with persistent context"
+---
+
+# Conversations
+
+The Conversations API allows you to manage multi-turn conversations with persistent context, ensuring continuity across multiple interactions.
+
+## Overview
+
+Conversations provide:
+- **Persistent Context**: Maintain conversation state across multiple API calls
+- **Memory Management**: Automatic context window management and optimization
+- **Conversation History**: Access to previous messages and interactions
+- **Session Management**: Create, retrieve, and manage conversation sessions
+
+## Creating a Conversation
+
+### Endpoint
+```
+POST https://api.substrate.ai/v1/conversations
+```
+
+### Request
+```json
+{
+  "title": "Customer Support Chat",
+  "system_prompt": "You are a helpful customer support agent.",
+  "model": "gpt-4",
+  "settings": {
+    "temperature": 0.7,
+    "max_tokens": 150
+  }
+}
+```
+
+### Response
+```json
+{
+  "id": "conv_8kJn6KzJvE2OKxYNLqJ8mQ",
+  "title": "Customer Support Chat",
+  "created_at": "2023-11-20T10:30:00Z",
+  "updated_at": "2023-11-20T10:30:00Z",
+  "message_count": 0,
+  "model": "gpt-4"
+}
+```
+
+## Sending Messages
+
+### Endpoint
+```
+POST https://api.substrate.ai/v1/conversations/{conversation_id}/messages
+```
+
+### Request
+```json
+{
+  "content": "Hello, I need help with my order",
+  "role": "user"
+}
+```
+
+### Response
+```json
+{
+  "id": "msg_abc123",
+  "conversation_id": "conv_8kJn6KzJvE2OKxYNLqJ8mQ",
+  "role": "assistant",
+  "content": "Hello! I'd be happy to help you with your order. Could you please provide your order number?",
+  "created_at": "2023-11-20T10:31:00Z",
+  "token_count": 23
+}
+```
+
+## Code Examples
+
+<CodeGroup>
+```python Python
+import requests
+
+api_key = "your-api-key-here"
+base_url = "https://api.substrate.ai/v1"
+headers = {
+    "Content-Type": "application/json",
+    "Authorization": f"Bearer {api_key}"
+}
+
+# Create a conversation
+conversation_data = {
+    "title": "AI Assistant Chat",
+    "system_prompt": "You are a helpful AI assistant.",
+    "model": "gpt-4"
+}
+
+conv_response = requests.post(
+    f"{base_url}/conversations",
+    headers=headers,
+    json=conversation_data
+)
+conversation_id = conv_response.json()["id"]
+
+# Send a message
+message_data = {
+    "content": "Explain machine learning in simple terms",
+    "role": "user"
+}
+
+response = requests.post(
+    f"{base_url}/conversations/{conversation_id}/messages",
+    headers=headers,
+    json=message_data
+)
+
+print(response.json()["content"])
+```
+
+```javascript JavaScript
+const apiKey = 'your-api-key-here';
+const baseURL = 'https://api.substrate.ai/v1';
+
+const headers = {
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${apiKey}`
+};
+
+// Create a conversation
+const conversationData = {
+  title: 'AI Assistant Chat',
+  system_prompt: 'You are a helpful AI assistant.',
+  model: 'gpt-4'
+};
+
+const convResponse = await fetch(`${baseURL}/conversations`, {
+  method: 'POST',
+  headers,
+  body: JSON.stringify(conversationData)
+});
+
+const conversation = await convResponse.json();
+const conversationId = conversation.id;
+
+// Send a message
+const messageData = {
+  content: 'Explain machine learning in simple terms',
+  role: 'user'
+};
+
+const response = await fetch(`${baseURL}/conversations/${conversationId}/messages`, {
+  method: 'POST',
+  headers,
+  body: JSON.stringify(messageData)
+});
+
+const message = await response.json();
+console.log(message.content);
+```
+</CodeGroup>
+
+## Managing Conversations
+
+### List Conversations
+```
+GET https://api.substrate.ai/v1/conversations
+```
+
+### Get Conversation
+```
+GET https://api.substrate.ai/v1/conversations/{conversation_id}
+```
+
+### Delete Conversation
+```
+DELETE https://api.substrate.ai/v1/conversations/{conversation_id}
+```
+
+## Best Practices
+
+<Tip>
+  **Set Clear System Prompts**: Define the assistant's role and behavior at the conversation level for consistent responses.
+</Tip>
+
+<Tip>
+  **Monitor Token Usage**: Long conversations can consume many tokens. Consider implementing conversation pruning strategies.
+</Tip>
+
+<Tip>
+  **Use Meaningful Titles**: Give conversations descriptive titles for better organization and retrieval.
+</Tip>
